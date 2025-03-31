@@ -1,12 +1,13 @@
 import dash
 from dash import html, dcc, Input, Output, State
 import dash_bootstrap_components as dbc
-import plotly.express as px
+
 
 class DashBoardroom:
-    def __init__(self, title="DashBoardroom Report"):
+    def __init__(self, layout, title="DashBoardroom Report"):
         self.app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
         self.title = title
+        self.initial_layout = layout  # Store user-defined layout
         self.layout()
 
     def layout(self):
@@ -31,25 +32,46 @@ class DashBoardroom:
             Input("mode", "data")
         )
         def update_content(mode):
-            fig = px.scatter(px.data.iris(), x="sepal_width", y="sepal_length", color="species")
+            children = []
             if mode == "edit":
-                return html.Div([
-                    html.H2("Edit Mode"),
-                    html.Div(
-                        "Drag and drop components here...",
-                        style={"border": "2px dashed #aaa", "padding": "20px", "minHeight": "200px", "marginBottom": "20px"}
-                    ),
-                    dbc.Input(placeholder="Enter new text here", type="text", style={"marginBottom": "10px"}),
-                    dbc.Button("Add Text Block", id="add-text", n_clicks=0)
-                ])
+                children.append(html.H2("Edit Mode"))
             else:
-                return html.Div([
-                    html.H2("Presentation Mode"),
-                    dcc.Graph(figure=fig)
-                ])
+                children.append(html.H2("Presentation Mode"))
+
+            for comp in self.initial_layout:
+                if mode == "edit":
+                    children.append(
+                        html.Div(
+                            comp,
+                            draggable="true",
+                            style={
+                                "border": "2px dashed #aaa",
+                                "padding": "10px",
+                                "margin-bottom": "10px"
+                            }
+                        )
+                    )
+                else:
+                    children.append(comp)
+
+            return children
 
     def run(self):
         self.app.run(debug=True)
 
+
 if __name__ == "__main__":
-    DashBoardroom().run()
+    import plotly.express as px
+
+    # Define the report layout manually
+    fig1 = px.scatter(px.data.iris(), x="sepal_width", y="sepal_length", color="species")
+    fig2 = px.bar(px.data.tips(), x="day", y="total_bill", color="sex", barmode="group")
+
+    layout = [
+        html.H1("My Report"),
+        dcc.Graph(figure=fig1),
+        dcc.Graph(figure=fig2),
+        html.P("This is some explanatory text.")
+    ]
+
+    DashBoardroom(layout).run()
