@@ -1,0 +1,3 @@
+dash_bootstrap_components
+dash
+pandas
